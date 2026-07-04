@@ -23,4 +23,9 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
         return ResponseEntity.badRequest().body(new ApiError(message));
     }
+
+    @ExceptionHandler({InsufficientFundsException.class, InvalidTransferException.class, })
+    public ResponseEntity<ApiError> handleException(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_CONTENT).body(new ApiError(ex.getMessage()));
+    }
 }
