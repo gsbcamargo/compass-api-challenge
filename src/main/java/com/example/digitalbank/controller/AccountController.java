@@ -3,6 +3,7 @@ package com.example.digitalbank.controller;
 import com.example.digitalbank.domain.Account;
 import com.example.digitalbank.dto.request.CreateAccountRequest;
 import com.example.digitalbank.dto.response.AccountResponse;
+import com.example.digitalbank.exception.AccountNotFoundException;
 import com.example.digitalbank.repository.AccountRepository;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -31,7 +32,7 @@ public class AccountController {
         return accountRepository.findById(id)
                 .map(AccountResponse::from)
                 // TODO refactor exception
-                .orElseThrow(() -> new RuntimeException("Account not found" + id));
+                .orElseThrow(() -> new AccountNotFoundException(id));
     }
 
     @PostMapping
