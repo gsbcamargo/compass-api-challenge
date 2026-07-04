@@ -16,7 +16,10 @@ public class Account {
     private UUID id;
 
     @Column(nullable = false)
-    private String ownerName;
+    private String firstName;
+
+    @Column(nullable = false)
+    private String lastName;
 
     @Column(nullable = false, precision = 19, scale = 4)
     private BigDecimal balance;
@@ -38,12 +41,24 @@ public class Account {
         this.id = id;
     }
 
-    public String getOwnerName() {
-        return ownerName;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setOwnerName(String ownerName) {
-        this.ownerName = ownerName;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public String getFullName() {
+        return firstName + " " + lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
     public BigDecimal getBalance() {
