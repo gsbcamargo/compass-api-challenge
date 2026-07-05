@@ -66,7 +66,7 @@ Criadas automaticamente na primeira inicialização:
 | `carla` | `password123` | USER |
 | `admin` | `admin` | ADMIN |
 
-**Atenção:** a credencial `admin`/`admin` é deliberadamente fraca, serve apenas para este projeto de demonstração.
+**Atenção:** as credenciais são deliberadamente fracas, servem apenas para este projeto de demonstração.
 
 ## Estrutura do projeto
 
