@@ -18,5 +18,12 @@ security:
     secret: ${JWT_SECRET:change-this-in-production-please-use-a-long-random-secret}
     expiration-minutes: ${JWT_EXPIRATION_MINUTES:60}
 
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui.html
+
 server:
   port: 8080
