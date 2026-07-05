@@ -3,26 +3,34 @@ package com.example.digitalbank.service;
 import com.example.digitalbank.domain.Account;
 import com.example.digitalbank.domain.TransferRecord;
 import com.example.digitalbank.domain.TransferStatus;
+import com.example.digitalbank.event.TransferCompletedEvent;
 import com.example.digitalbank.exception.AccountNotFoundException;
 import com.example.digitalbank.exception.InsufficientFundsException;
 import com.example.digitalbank.exception.InvalidTransferException;
 import com.example.digitalbank.repository.AccountRepository;
 import com.example.digitalbank.repository.TransferRecordRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Component
 class TransferTransactionalOps {
+    private static final Logger log = LoggerFactory.getLogger(TransferTransactionalOps.class);
 
     private final AccountRepository accountRepository;
     private final TransferRecordRepository transferRecordRepository;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public TransferTransactionalOps(AccountRepository accountRepository, TransferRecordRepository transferRecordRepository) {
+    public TransferTransactionalOps(AccountRepository accountRepository, TransferRecordRepository transferRecordRepository, ApplicationEventPublisher eventPublisher) {
         this.accountRepository = accountRepository;
         this.transferRecordRepository = transferRecordRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     @Transactional
@@ -63,6 +71,9 @@ class TransferTransactionalOps {
         transferRecord.setStatus(TransferStatus.COMPLETED);
 
         transferRecordRepository.save(transferRecord);
+
+        log.info("About to publish TransferCompletedEvent for transfer {}", transferRecord.getId());
+        eventPublisher.publishEvent(new TransferCompletedEvent(transferRecord.getId(),fromId, toId, amount));
 
         return transferRecord;
     }
