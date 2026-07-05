@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Digital Bank</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 900px; margin: 40px auto; color: #1a1a1a; }
+  section { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #eee; font-size: 0.9rem; }
+  input, select, button { padding: 6px 8px; margin: 4px 4px 4px 0; }
+  .error { color: #b00020; font-size: 0.85rem; }
+
+  .tabs { display:flex; gap:8px; margin-bottom:12px; }
+  .tab { background:none; border:1px solid #ddd; border-radius:6px; padding:6px 14px; cursor:pointer; font-size:0.9rem; }
+  .tab.active { background:#1a1a1a; color:#fff; border-color:#1a1a1a; }
+</style>
+</head>
+<body>
+  <h1>Digital Bank</h1>
+
+  <section id="auth-section">
+    <div class="tabs">
+      <button id="tab-login" class="tab active" type="button">Log in</button>
+      <button id="tab-register" class="tab" type="button">Register</button>
+    </div>
+
+    <form id="login-form">
+        <label>
+            <input name="username" placeholder="username (e.g. alice)" required>
+        </label>
+        <label>
+            <input name="password" type="password" placeholder="password" required>
+        </label>
+        <button type="submit">Log in</button>
+    </form>
+    <p id="login-feedback" class="error"></p>
+    <p style="font-size:0.8rem;color:#777">Demo accounts: alice / bruno / carla — password: password123</p>
+
+    <form id="register-form" style="display:none">
+        <label>
+            <input name="firstName" placeholder="First name" required>
+        </label>
+        <label>
+            <input name="lastName" placeholder="Last name" required>
+        </label>
+        <label>
+            <input name="username" placeholder="Choose a username" required minlength="3" maxlength="50">
+        </label>
+        <label>
+            <input name="password" type="password" placeholder="Password (min 8 chars)" required minlength="8">
+        </label>
+        <label>
+            <input name="initialBalance" type="number" step="0.01" min="0" placeholder="Initial balance" required>
+        </label>
+        <button type="submit">Create account</button>
+    </form>
+    <p id="register-feedback" class="error"></p>
+  </section>
+
+  <div id="app" style="display:none">
+    <p id="whoami"></p>
+    <button id="logout">Log out</button>
+
+    <section>
+      <h2>Other accounts</h2>
+      <table id="accounts-table"><thead><tr><th>ID</th><th>Name</th></tr></thead><tbody></tbody></table>
+    </section>
+
+    <section>
+      <h2>Transfer</h2>
+      <form id="transfer-form">
+          <label for="to-select"></label><select name="toAccountId" id="to-select" required></select>
+          <label>
+              <input name="amount" type="number" step="0.01" placeholder="Amount" required>
+          </label>
+          <button type="submit">Transfer</button>
+      </form>
+      <p id="transfer-feedback"></p>
+    </section>
+
+    <section>
+      <h2>Notifications</h2>
+      <button id="load-notifs">Refresh</button>
+      <ul id="notif-list"></ul>
+    </section>
+  </div>
+
+<script>
+const api = "/api";
+let token = localStorage.getItem("token");
+let accountId = localStorage.getItem("accountId");
+let firstName = localStorage.getItem("firstName");
+
+function switchTab(which) {
+  const isLogin = which === "login";
+  document.getElementById("login-form").style.display = isLogin ? "block" : "none";
+  document.getElementById("register-form").style.display = isLogin ? "none" : "block";
+  document.getElementById("tab-login").classList.toggle("active", isLogin);
+  document.getElementById("tab-register").classList.toggle("active", !isLogin);
+  document.getElementById("login-feedback").textContent = "";
+  document.getElementById("register-feedback").textContent = "";
+}
+document.getElementById("tab-login").addEventListener("click", () => switchTab("login"));
+document.getElementById("tab-register").addEventListener("click", () => switchTab("register"));
+
+async function authFetch(url, options = {}) {
+  const res = await fetch(url, {
+    ...options,
+    headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json", ...(options.headers || {}) }
+  });
+  if (res.status === 401) { localStorage.clear(); location.reload(); throw new Error("session expired"); }
+  return res;
+}
+
+function showApp() {
+  document.getElementById("auth-section").style.display = "none";
+  document.getElementById("app").style.display = "block";
+  loadOwnAccount();
+  loadAccounts();
+  loadNotifications();
+}
+if (token) showApp();
+
+document.getElementById("login-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = new FormData(e.target);
+  const res = await fetch(`${api}/auth/login`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username: form.get("username"), password: form.get("password") })
+  });
+  if (res.ok) {
+    const data = await res.json();
+    token = data.accessToken; accountId = data.accountId; firstName = data.firstName;
+    localStorage.setItem("token", token);
+    localStorage.setItem("accountId", accountId);
+    localStorage.setItem("firstName", firstName);
+    showApp();
+  } else {
+    document.getElementById("login-feedback").textContent = "Invalid username or password.";
+  }
+});
+
+document.getElementById("register-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = new FormData(e.target);
+  const feedback = document.getElementById("register-feedback");
+  feedback.textContent = "";
+
+  const res = await fetch(`${api}/accounts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      firstName: form.get("firstName"),
+      lastName: form.get("lastName"),
+      username: form.get("username"),
+      password: form.get("password"),
+        initialBalance: parseFloat(String(form.get("initialBalance")))    })
+  });
+
+  if (res.ok) {
+    const loginRes = await fetch(`${api}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: form.get("username"), password: form.get("password") })
+    });
+    const data = await loginRes.json();
+    token = data.accessToken; accountId = data.accountId; firstName = data.firstName;
+    localStorage.setItem("token", token);
+    localStorage.setItem("accountId", accountId);
+    localStorage.setItem("firstName", firstName);
+    showApp();
+  } else if (res.status === 409) {
+    feedback.textContent = "That username is already taken.";
+  } else {
+    const err = await res.json();
+    feedback.textContent = err.message || "Could not create account.";
+  }
+});
+
+document.getElementById("logout").addEventListener("click", () => { localStorage.clear(); location.reload(); });
+
+async function loadOwnAccount() {
+  const res = await authFetch(`${api}/accounts/${accountId}`);
+  const acc = await res.json();
+  document.getElementById("whoami").textContent = `Logged in as ${firstName} — balance: ${acc.balance}`;
+}
+
+async function loadAccounts() {
+  const res = await authFetch(`${api}/accounts`);
+  const accounts = await res.json();
+  const tbody = document.querySelector("#accounts-table tbody");
+  const toSelect = document.getElementById("to-select");
+  tbody.innerHTML = ""; toSelect.innerHTML = "";
+  accounts.filter(a => a.id !== accountId).forEach(a => {
+    tbody.innerHTML += `<tr><td>${a.id.slice(0,8)}...</td><td>${a.firstName} ${a.lastName}</td></tr>`;
+    toSelect.innerHTML += `<option value="${a.id}">${a.firstName} ${a.lastName}</option>`;
+  });
+}
+
+document.getElementById("transfer-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const form = new FormData(e.target);
+  const feedback = document.getElementById("transfer-feedback");
+  const res = await authFetch(`${api}/transfers`, {
+    method: "POST",
+      body: JSON.stringify({ fromAccountId: accountId, toAccountId: form.get("toAccountId"), amount: parseFloat(String(form.get("amount"))) })
+  });
+  if (res.ok) { feedback.textContent = "Transfer completed."; feedback.className = "ok"; }
+  else { const err = await res.json(); feedback.textContent = err.message || "Transfer failed."; feedback.className = "error"; }
+  e.target.reset();
+  await loadOwnAccount();
+  await loadNotifications();
+});
+
+async function loadNotifications() {
+  const res = await authFetch(`${api}/notifications/${accountId}`);
+  const notifs = await res.json();
+  document.getElementById("notif-list").innerHTML =
+    notifs.map(n => `<li>${n.message} — ${new Date(n.createdAt).toLocaleString()}</li>`).join("");
+}
+document.getElementById("load-notifs").addEventListener("click", loadNotifications);
+</script>
+</body>
+</html>
