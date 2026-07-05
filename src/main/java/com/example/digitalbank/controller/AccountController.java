@@ -7,6 +7,7 @@ import com.example.digitalbank.dto.response.AccountSummaryResponse;
 import com.example.digitalbank.exception.AccountNotFoundException;
 import com.example.digitalbank.exception.ForbiddenAccessException;
 import com.example.digitalbank.repository.AccountRepository;
+import com.example.digitalbank.security.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -37,7 +38,7 @@ public class AccountController {
 
     @GetMapping("/{id}")
     public AccountResponse getAccount(@PathVariable UUID id, Authentication authentication) {
-        if (!id.equals(authentication.getPrincipal())) {
+        if (SecurityUtils.canAccess(id, authentication)) {
             throw new ForbiddenAccessException("You can only view your own account");
         }
 
@@ -55,6 +56,8 @@ public class AccountController {
         account.setUsername(request.username());
         account.setPasswordHash(passwordEncoder.encode(request.password()));
         account.setBalance(request.initialBalance());
+        account.setRole("USER");
+
         return AccountResponse.from(accountRepository.save(account));
     }
 }

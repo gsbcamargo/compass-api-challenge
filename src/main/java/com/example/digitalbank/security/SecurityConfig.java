@@ -32,9 +32,10 @@ public class SecurityConfig {
                 .sessionManagement(
                         sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/index.html", "/favicon.ico").permitAll()
+                        .requestMatchers("/", "/index.html", "/favicon.ico", "/error").permitAll()
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/accounts").permitAll()
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(e -> e.authenticationEntryPoint(
