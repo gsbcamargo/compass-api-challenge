@@ -5,6 +5,8 @@ import com.example.digitalbank.repository.NotificationRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -21,12 +23,13 @@ public class NotificationListener {
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onTransferCompleted(TransferCompletedEvent event) {
         log.info("onTransferCompleted invoked for transfer {}", event.transferId());
         notificationRepository.save(build(event.fromAccountId(),
-                "You sent " + event.amount() + "to account " + event.toAccountId()));
+                "You sent " + event.amount() + " to account " + event.toAccountId()));
         notificationRepository.save(build(event.toAccountId(),
-                "You received " + event.amount() + "from account " + event.fromAccountId()));
+                "You received " + event.amount() + " from account " + event.fromAccountId()));
         log.info("onTransferCompleted finished for transfer {}", event.transferId());
     }
 
