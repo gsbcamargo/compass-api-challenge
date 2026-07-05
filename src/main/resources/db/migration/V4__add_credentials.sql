@@ -1,0 +1,2 @@
+ALTER TABLE accounts ADD COLUMN username VARCHAR(50) UNIQUE;
+ALTER TABLE accounts ADD COLUMN password_hash VARCHAR(100);

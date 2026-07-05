@@ -27,6 +27,10 @@ public class Account {
     @Version
     private Long version;
 
+    private String username;
+
+    private String passwordHash;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -71,6 +75,22 @@ public class Account {
 
     public void setVersion(Long version) {
         this.version = version;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+
+    public void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
     }
 
     public Instant getCreatedAt() {

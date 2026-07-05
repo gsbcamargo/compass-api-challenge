@@ -1,7 +1,9 @@
 package com.example.digitalbank.controller;
 
 import com.example.digitalbank.dto.response.NotificationResponse;
+import com.example.digitalbank.exception.ForbiddenAccessException;
 import com.example.digitalbank.repository.NotificationRepository;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -21,7 +23,10 @@ public class NotificationController {
     }
 
     @GetMapping("/{accountId}")
-    public List<NotificationResponse> list(@PathVariable UUID accountId) {
+    public List<NotificationResponse> list(@PathVariable UUID accountId, Authentication authentication) {
+        if (!accountId.equals(authentication.getPrincipal())) {
+            throw new ForbiddenAccessException("You can only view your own notifications");
+        }
         return notificationRepository.findByAccountIdOrderByCreatedAtDesc(accountId).stream()
                 .map(notification ->
                         new NotificationResponse(
