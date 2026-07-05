@@ -32,7 +32,7 @@ public class AdminAccountSeeder implements ApplicationRunner {
         admin.setLastName("Admin");
         admin.setUsername("admin");
         admin.setPasswordHash(passwordEncoder.encode("admin"));
-        admin.setBalance(BigDecimal.ZERO);
+        admin.setBalance(new BigDecimal("50000.00"));
         admin.setRole("ADMIN");
         accountRepository.save(admin);
     }
