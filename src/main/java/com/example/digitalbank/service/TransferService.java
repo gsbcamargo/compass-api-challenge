@@ -15,7 +15,7 @@ public class TransferService {
         this.ops = ops;
     }
 
-    public TransferRecord transfer(UUID fromId, UUID toId, BigDecimal amount) {
-        return  ops.execute(fromId, toId, amount);
+    public TransferRecord transfer(UUID fromId, UUID toId, BigDecimal amount, String idempotencyKey) {
+        return  ops.execute(fromId, toId, amount,  idempotencyKey);
     }
 }

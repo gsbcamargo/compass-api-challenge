@@ -25,7 +25,7 @@ public class NotificationController {
 
     @GetMapping("/{accountId}")
     public List<NotificationResponse> list(@PathVariable UUID accountId, Authentication authentication) {
-        if (SecurityUtils.canAccess(accountId, authentication)) {
+        if (!SecurityUtils.canAccess(accountId, authentication)) {
             throw new ForbiddenAccessException("You can only view your own notifications");
         }
 

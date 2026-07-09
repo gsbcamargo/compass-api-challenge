@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class AuthorizationIntegrationTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry registry) {

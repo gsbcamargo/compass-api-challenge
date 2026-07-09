@@ -38,7 +38,7 @@ public class AccountController {
 
     @GetMapping("/{id}")
     public AccountResponse getAccount(@PathVariable UUID id, Authentication authentication) {
-        if (SecurityUtils.canAccess(id, authentication)) {
+        if (!SecurityUtils.canAccess(id, authentication)) {
             throw new ForbiddenAccessException("You can only view your own account");
         }
 

@@ -26,7 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class ConcurrentTransferIntegrationTest {
 
     @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
+    static final PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:16-alpine");
 
     @DynamicPropertySource
     static void props(DynamicPropertyRegistry registry) {
@@ -70,7 +70,7 @@ class ConcurrentTransferIntegrationTest {
                     try {
                         UUID from = aToB ? a.getId() : b.getId();
                         UUID to = aToB ? b.getId() : a.getId();
-                        transferService.transfer(from, to, new BigDecimal("10.00"));
+                        transferService.transfer(from, to, new BigDecimal("10.00"), null);
                     } catch (Exception ignored) {
                         // insufficient funds, etc are expected under contention, only the final totals matter here
                     } finally {

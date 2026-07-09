@@ -17,6 +17,6 @@ public final class SecurityUtils {
     }
 
     public static boolean canAccess(UUID accountId, Authentication authentication) {
-        return !isAdmin(authentication) && !accountId.equals(authentication.getPrincipal());
+        return isAdmin(authentication) || accountId.equals(authentication.getPrincipal());
     }
 }

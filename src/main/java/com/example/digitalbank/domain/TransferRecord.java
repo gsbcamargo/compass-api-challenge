@@ -26,6 +26,7 @@ public class TransferRecord {
     @Enumerated(EnumType.STRING)
     private TransferStatus status;
 
+    @Column(name = "idempotency_key", unique = true)
     private String idempotencyKey;
 
     @Column(nullable = false, updatable = false)

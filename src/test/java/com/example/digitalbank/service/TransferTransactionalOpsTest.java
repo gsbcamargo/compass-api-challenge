@@ -47,7 +47,7 @@ class TransferTransactionalOpsTest {
         when(accountRepository.findByIdForUpdate(alice.getId())).thenReturn(Optional.of(alice));
         when(accountRepository.findByIdForUpdate(bruno.getId())).thenReturn(Optional.of(bruno));
 
-        TransferRecord result = ops.execute(alice.getId(), bruno.getId(), new BigDecimal("30.00"));
+        TransferRecord result = ops.execute(alice.getId(), bruno.getId(), new BigDecimal("30.00"), null);
 
         assertThat(alice.getBalance()).isEqualByComparingTo("70.00");
         assertThat(bruno.getBalance()).isEqualByComparingTo("80.00");
@@ -66,7 +66,7 @@ class TransferTransactionalOpsTest {
         when(accountRepository.findByIdForUpdate(bruno.getId())).thenReturn(Optional.of(bruno));
 
         assertThrows(InsufficientFundsException.class, () ->
-                ops.execute(alice.getId(), bruno.getId(), new BigDecimal("100.00")));
+                ops.execute(alice.getId(), bruno.getId(), new BigDecimal("100.00"), null));
 
         // balances must be untouched when a transfer is rejected mid-way
         assertThat(alice.getBalance()).isEqualByComparingTo("10.00");
@@ -76,19 +76,19 @@ class TransferTransactionalOpsTest {
     @Test
     void rejectsSameAccountTransfer() {
         UUID id = UUID.randomUUID();
-        assertThrows(InvalidTransferException.class, () -> ops.execute(id, id, BigDecimal.TEN));
+        assertThrows(InvalidTransferException.class, () -> ops.execute(id, id, BigDecimal.TEN, null));
     }
 
     @Test
     void rejectsZeroAmount() {
         assertThrows(InvalidTransferException.class, () ->
-                ops.execute(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.ZERO));
+                ops.execute(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.ZERO, null));
     }
 
     @Test
     void rejectsNegativeAmount() {
         assertThrows(InvalidTransferException.class, () ->
-                ops.execute(UUID.randomUUID(), UUID.randomUUID(), new BigDecimal("-5.00")));
+                ops.execute(UUID.randomUUID(), UUID.randomUUID(), new BigDecimal("-5.00"), null));
     }
 
     @Test
@@ -96,7 +96,31 @@ class TransferTransactionalOpsTest {
         when(accountRepository.findByIdForUpdate(any(UUID.class))).thenReturn(Optional.empty());
 
         assertThrows(AccountNotFoundException.class, () ->
-                ops.execute(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.TEN));
+                ops.execute(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.TEN, null));
+    }
+
+    @Test
+    void returnsExistingRecordForRepeatedIdempotencyKey() {
+        Account alice = account(new BigDecimal("100.00"));
+        Account bruno = account(new BigDecimal("50.00"));
+        String key = "test-key-123";
+
+        when(accountRepository.findByIdForUpdate(alice.getId())).thenReturn(Optional.of(alice));
+        when(accountRepository.findByIdForUpdate(bruno.getId())).thenReturn(Optional.of(bruno));
+        when(transferRecordRepository.findByIdempotencyKey(key)).thenReturn(Optional.empty());
+
+        TransferRecord first = ops.execute(alice.getId(), bruno.getId(), new BigDecimal("30.00"), key);
+
+        assertThat(alice.getBalance()).isEqualByComparingTo("70.00");
+        assertThat(bruno.getBalance()).isEqualByComparingTo("80.00");
+
+        when(transferRecordRepository.findByIdempotencyKey(key)).thenReturn(Optional.of(first));
+
+        TransferRecord second = ops.execute(alice.getId(), bruno.getId(), new BigDecimal("30.00"), key);
+
+        assertThat(second).isEqualTo(first);
+        assertThat(alice.getBalance()).isEqualByComparingTo("70.00");
+        assertThat(bruno.getBalance()).isEqualByComparingTo("80.00");
     }
 
     private Account account(BigDecimal balance) {

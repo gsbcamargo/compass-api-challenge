@@ -252,7 +252,7 @@ Documentação interativa completa disponível em `/swagger-ui.html` após subir
 | POST | `/api/accounts` | Pública | Registro de nova conta |
 | GET | `/api/accounts` | JWT | Lista contas (sem saldo, apenas nome e id) |
 | GET | `/api/accounts/{id}` | JWT (própria conta ou admin) | Detalhe completo de uma conta, incluindo saldo |
-| POST | `/api/transfers` | JWT (própria conta de origem ou admin) | Realiza uma transferência |
+| POST | `/api/transfers` | JWT (própria conta de origem ou admin) | Realiza uma transferência. Aceita um header opcional `Idempotency-Key`: uma segunda chamada com a mesma chave retorna o resultado da primeira, sem processar a transferência de novo |
 | GET | `/api/notifications/{accountId}` | JWT (própria conta ou admin) | Lista notificações de uma conta |
 | GET | `/api/admin/accounts` | JWT com papel ADMIN | Lista todas as contas, com saldo |
 | GET | `/api/admin/transfers` | JWT com papel ADMIN | Lista todas as transferências do sistema |

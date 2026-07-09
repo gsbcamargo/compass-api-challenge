@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -34,8 +35,16 @@ class TransferTransactionalOps {
     }
 
     @Transactional
-    TransferRecord execute(UUID fromId, UUID toId, BigDecimal amount) {
-        if(fromId.equals(toId)) {
+    TransferRecord execute(UUID fromId, UUID toId, BigDecimal amount, String idempotencyKey) {
+
+        if (idempotencyKey != null) {
+            Optional<TransferRecord> existing = transferRecordRepository.findByIdempotencyKey(idempotencyKey);
+            if (existing.isPresent()) {
+                return existing.get();
+            }
+        }
+
+        if (fromId.equals(toId)) {
             throw new InvalidTransferException("Origin and destination accounts must differ");
         }
 
@@ -70,6 +79,7 @@ class TransferTransactionalOps {
         transferRecord.setAmount(amount);
         transferRecord.setStatus(TransferStatus.COMPLETED);
 
+        transferRecord.setIdempotencyKey(idempotencyKey);
         transferRecordRepository.save(transferRecord);
 
         log.info("About to publish TransferCompletedEvent for transfer {}", transferRecord.getId());

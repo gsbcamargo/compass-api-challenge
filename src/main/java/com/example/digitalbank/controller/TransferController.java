@@ -22,13 +22,15 @@ public class TransferController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public TransferResponse transfer(@Valid @RequestBody TransferRequest transferRequest, Authentication authentication) {
-        if (SecurityUtils.canAccess(transferRequest.fromAccountId(), authentication)) {
+    public TransferResponse transfer(@Valid @RequestBody TransferRequest transferRequest,
+                                     @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+                                     Authentication authentication) {
+        if (!SecurityUtils.canAccess(transferRequest.fromAccountId(), authentication)) {
             throw new ForbiddenAccessException("You can only transfer from your own account");
         }
 
         TransferRecord transferRecord = transferService.transfer(
-                transferRequest.fromAccountId(), transferRequest.toAccountId(), transferRequest.amount());
+                transferRequest.fromAccountId(), transferRequest.toAccountId(), transferRequest.amount(), idempotencyKey);
 
         return TransferResponse.from(transferRecord);
     }
