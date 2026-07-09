@@ -220,7 +220,7 @@ Comprovado por `ConcurrentTransferIntegrationTest`: 50 transferências concorren
 
 ### Separação entre a camada pública e a transacional
 
-`TransferService` (pública) delega para `TransferTransactionalOps`, que tem visibilidade de pacote (package private, não pública) e é anotada com `@Transactional`. Isso impede que qualquer código fora do pacote `service` chame a lógica transacional diretamente e pule a camada pública, o que é relevante caso uma política de retry sobre falhas de lock venha a ser adicionada no futuro.
+`TransferService` (pública) delega para `TransferTransactionalOps`, que tem visibilidade de pacote (package private, não pública) e é anotada com `@Transactional`. Isso impede que qualquer código fora do pacote `service` chame a lógica transacional diretamente e pule a camada pública.
 
 ### Notificações via evento após o commit
 
